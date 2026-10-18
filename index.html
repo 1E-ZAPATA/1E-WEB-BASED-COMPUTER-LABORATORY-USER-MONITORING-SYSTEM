@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computer Laboratory User Monitoring System</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Computer Laboratory User Monitoring System</h1>
+    <p class="sub">Occidental Mindoro State College</p>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="student" role="tab">Student</button>
+    <button class="tab" data-tab="admin" role="tab">Teacher / Staff</button>
+  </nav>
+</header>
+
+<main>
+  <!-- STUDENT VIEW -->
+  <section id="student" class="panel">
+    <div class="cols">
+      <div class="stack">
+        <form id="timeInForm" class="card">
+          <h2>Time in</h2>
+          <label>Student ID
+            <input id="sid" required placeholder="e.g. 2024-00123" autocomplete="off">
+          </label>
+          <label>Full name
+            <input id="sname" required placeholder="Last name, First name" autocomplete="off">
+          </label>
+          <label>Course and section
+            <input id="ssection" required placeholder="e.g. BSIT 2A" autocomplete="off">
+          </label>
+          <label>Computer
+            <input id="spc" readonly required placeholder="Select a free computer on the map">
+          </label>
+          <button class="btn primary" type="submit">Start session</button>
+          <p id="inMsg" class="msg" role="status"></p>
+        </form>
+
+        <form id="timeOutForm" class="card">
+          <h2>Time out</h2>
+          <label>Student ID
+            <input id="outId" required placeholder="Enter the ID you used to time in" autocomplete="off">
+          </label>
+          <button class="btn" type="submit">End session</button>
+          <p id="outMsg" class="msg" role="status"></p>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Laboratory map</h2>
+        <div class="legend">
+          <span><i class="dot free"></i>Free</span>
+          <span><i class="dot used"></i>In use</span>
+          <span><i class="dot pick"></i>Your choice</span>
+        </div>
+        <div id="map" class="map" aria-label="Computer laboratory map"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMIN VIEW -->
+  <section id="admin" class="panel" hidden>
+    <form id="loginForm" class="card narrow">
+      <h2>Teacher / staff sign in</h2>
+      <label>Password
+        <input id="adminPass" type="password" required autocomplete="off">
+      </label>
+      <button class="btn primary" type="submit">Sign in</button>
+      <p id="loginMsg" class="msg" role="status"></p>
+    </form>
+
+    <div id="dashboard" hidden>
+      <div class="stats">
+        <div class="stat"><b id="statActive">0</b><span>computers in use</span></div>
+        <div class="stat"><b id="statFree">0</b><span>computers free</span></div>
+        <div class="stat"><b id="statToday">0</b><span>sessions today</span></div>
+      </div>
+
+      <div class="card">
+        <div class="bar">
+          <h2>Usage records</h2>
+          <div class="tools">
+            <input id="search" type="search" placeholder="Search name, ID, section, computer">
+            <input id="dateFilter" type="date" aria-label="Filter by date">
+            <button id="exportBtn" class="btn">Download CSV</button>
+            <button id="clearBtn" class="btn danger">Clear all</button>
+            <button id="logoutBtn" class="btn">Sign out</button>
+          </div>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr><th>Computer</th><th>Student ID</th><th>Name</th><th>Section</th><th>Date</th><th>Time in</th><th>Time out</th><th>Duration</th><th></th></tr>
+            </thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+        <p id="emptyMsg" class="empty" hidden>No records yet. Records appear here when students time in.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
