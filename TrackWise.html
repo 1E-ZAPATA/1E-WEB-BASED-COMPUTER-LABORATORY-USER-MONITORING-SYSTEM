@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LabTrack – Computer Laboratory User Monitoring System</title>
+  <style>
+:root {
+  --p50: #f5f0ff;
+  --p100: #ece2ff;
+  --p200: #d9c5ff;
+  --p300: #bf9cff;
+  --p400: #a370f7;
+  --p500: #8b4fe8;
+  --p600: #7436cc;
+  --p700: #5d2aa5;
+  --p800: #411d75;
+  --p900: #2b1250;
+  --danger: #d6336c;
+  --ok: #2fb67a;
+  --radius: 16px;
+  --shadow: 0 8px 28px rgba(93, 42, 165, 0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  background: linear-gradient(160deg, var(--p50), var(--p100) 60%, var(--p200));
+  background-attachment: fixed;
+  color: var(--p900);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 28px;
+  background: linear-gradient(120deg, var(--p800), var(--p600));
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 46px; height: 46px; border-radius: 12px;
+  background: rgba(255,255,255,.16);
+  display: grid; place-items: center; font-size: 24px;
+}
+.brand h1 { font-size: 1.4rem; letter-spacing: .5px; }
+.brand p { font-size: .78rem; opacity: .85; }
+.clock { font-variant-numeric: tabular-nums; font-size: .95rem; opacity: .95; text-align: center; }
+
+.tabs { display: flex; gap: 6px; background: rgba(255,255,255,.12); padding: 4px; border-radius: 999px; }
+.tab {
+  border: 0; cursor: pointer; padding: 9px 18px; border-radius: 999px;
+  background: transparent; color: #fff; font-weight: 600; font-size: .9rem;
+  transition: .2s;
+}
+.tab:hover { background: rgba(255,255,255,.14); }
+.tab.active { background: #fff; color: var(--p700); }
+
+/* ---------- Layout ---------- */
+main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 26px 18px; }
+.view { display: none; }
+.view.active { display: block; animation: fade .3s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.grid-student {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+}
+.card.wide { grid-column: 1 / -1; }
+
+.card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--p100);
+  margin-bottom: 0;
+}
+#dashboard .card { margin-bottom: 20px; }
+.card h2 { color: var(--p700); margin-bottom: 4px; font-size: 1.2rem; }
+.card h3 { color: var(--p700); margin-bottom: 10px; }
+.hint { color: #7d6aa6; font-size: .86rem; margin-bottom: 14px; }
+
+/* ---------- Forms ---------- */
+label { display: block; font-size: .82rem; font-weight: 600; color: var(--p700); margin-bottom: 12px; }
+input, select {
+  width: 100%; margin-top: 5px; padding: 11px 13px;
+  border: 1.5px solid var(--p200); border-radius: 10px;
+  font-size: .95rem; background: var(--p50); color: var(--p900);
+  transition: .2s; font-family: inherit;
+}
+input:focus, select:focus { outline: none; border-color: var(--p500); background: #fff; box-shadow: 0 0 0 3px rgba(139,79,232,.18); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.btn {
+  border: 0; cursor: pointer; padding: 10px 18px; border-radius: 10px;
+  font-weight: 600; font-size: .88rem; transition: .2s; font-family: inherit;
+}
+.btn.full { width: 100%; padding: 13px; font-size: 1rem; }
+.btn.primary { background: linear-gradient(120deg, var(--p500), var(--p700)); color: #fff; }
+.btn.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn.danger { background: var(--danger); color: #fff; }
+.btn.danger:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn.ghost { background: var(--p100); color: var(--p700); }
+.btn.ghost:hover { background: var(--p200); }
+.btn.small { padding: 6px 12px; font-size: .78rem; border-radius: 8px; }
+
+.mini-stats { display: flex; gap: 12px; margin-top: 20px; }
+.mini-stats div {
+  flex: 1; text-align: center; background: var(--p50);
+  border: 1px dashed var(--p300); border-radius: 12px; padding: 14px;
+}
+.mini-stats strong { display: block; font-size: 1.8rem; color: var(--p600); }
+.mini-stats span { font-size: .8rem; color: #7d6aa6; }
+
+/* ---------- Active list ---------- */
+.active-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-top: 12px; }
+.user-card {
+  border: 1px solid var(--p200); border-left: 5px solid var(--p500);
+  border-radius: 12px; padding: 14px; background: var(--p50);
+}
+.user-card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.pc-badge { background: var(--p600); color: #fff; padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; }
+.user-card h4 { font-size: 1rem; }
+.user-card small { color: #7d6aa6; display: block; margin-top: 2px; }
+.elapsed { font-variant-numeric: tabular-nums; color: var(--p600); font-weight: 700; margin: 8px 0; }
+.empty { text-align: center; color: #9a88bd; padding: 22px; }
+
+/* ---------- Login ---------- */
+.login { max-width: 400px; margin: 30px auto; }
+.demo-note { margin-top: 14px; font-size: .82rem; color: #7d6aa6; text-align: center; }
+code { background: var(--p100); padding: 2px 7px; border-radius: 6px; color: var(--p700); }
+
+/* ---------- Dashboard ---------- */
+.dash-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+.dash-head h2 { color: var(--p800); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.stat {
+  background: linear-gradient(135deg, var(--p600), var(--p800));
+  color: #fff; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+}
+.stat span { font-size: .82rem; opacity: .85; }
+.stat strong { display: block; font-size: 2rem; margin-top: 4px; }
+
+.legend { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: #7d6aa6; margin-bottom: 12px; }
+.dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+.dot.free { background: var(--p100); border: 1.5px solid var(--p400); }
+.dot.used { background: var(--p600); margin-left: 10px; }
+
+.lab-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; }
+.pc {
+  border-radius: 10px; padding: 10px 6px; text-align: center; font-size: .75rem;
+  border: 1.5px solid var(--p400); background: var(--p100); color: var(--p700); min-height: 72px;
+}
+.pc b { display: block; font-size: .9rem; }
+.pc.used { background: linear-gradient(135deg, var(--p500), var(--p700)); color: #fff; border-color: var(--p700); }
+.pc span { display: block; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.filters { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; margin-bottom: 14px; }
+.filters input, .filters select { margin-top: 0; }
+
+.table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--p100); }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 980px; }
+th { background: var(--p700); color: #fff; text-align: left; padding: 11px 10px; white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--p100); white-space: nowrap; }
+tbody tr:nth-child(even) { background: var(--p50); }
+tbody tr:hover { background: var(--p100); }
+.badge { padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; }
+.badge.active { background: #d7f5e8; color: #17835a; }
+.badge.done { background: var(--p100); color: var(--p700); }
+td .btn + .btn { margin-left: 4px; }
+
+footer { text-align: center; padding: 16px; font-size: .8rem; color: var(--p700); }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; bottom: 26px; left: 50%; transform: translate(-50%, 30px);
+  background: var(--p800); color: #fff; padding: 12px 22px; border-radius: 12px;
+  box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: .3s; z-index: 50;
+  max-width: 90%; text-align: center;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.error { background: var(--danger); }
+.toast.success { background: #1f9d68; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 800px) {
+  .grid-student { grid-template-columns: 1fr; }
+  .filters { grid-template-columns: 1fr 1fr; }
+  .filters input[type="text"] { grid-column: 1 / -1; }
+  .topbar { justify-content: center; text-align: center; }
+}
+
+@media print {
+  .topbar, .tabs, .actions, .filters, footer, .toast, .legend, .lab-map, td:last-child, th:last-child { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; border: 0; }
+}
+
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🖥️</div>
+      <div>
+        <h1>LabTrack</h1>
+        <p>Web-Based Computer Laboratory User Monitoring System</p>
+      </div>
+    </div>
+    <div class="clock" id="clock"></div>
+    <nav class="tabs">
+      <button class="tab active" data-view="studentView">Student Portal</button>
+      <button class="tab" data-view="adminView">Admin Dashboard</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= STUDENT VIEW ================= -->
+    <section id="studentView" class="view active">
+      <div class="grid-student">
+
+        <div class="card">
+          <h2>🟣 Time In</h2>
+          <p class="hint">Fill in your details and choose the computer you will use.</p>
+          <form id="timeInForm" autocomplete="off">
+            <label>Full Name
+              <input type="text" id="name" placeholder="e.g. Flores, Andrea Mariz B." required>
+            </label>
+            <label>Student ID
+              <input type="text" id="studentId" placeholder="e.g. 2026-00123" required>
+            </label>
+            <div class="row">
+              <label>Section
+                <input type="text" id="section" placeholder="BSIT 1-E" required>
+              </label>
+              <label>Computer No.
+                <select id="pcSelect" required></select>
+              </label>
+            </div>
+            <label>Purpose
+              <select id="purpose">
+                <option>Class Activity</option>
+                <option>Laboratory Exercise</option>
+                <option>Programming / Coding</option>
+                <option>Research</option>
+                <option>Project / Requirement</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <button type="submit" class="btn primary full">Time In</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>⏹️ Time Out</h2>
+          <p class="hint">Enter your Student ID, or press “Time Out” beside your name in the list.</p>
+          <form id="timeOutForm" autocomplete="off">
+            <label>Student ID
+              <input type="text" id="outStudentId" placeholder="Your Student ID" required>
+            </label>
+            <button type="submit" class="btn danger full">Time Out</button>
+          </form>
+
+          <div class="mini-stats">
+            <div><strong id="sActive">0</strong><span>In use</span></div>
+            <div><strong id="sFree">0</strong><span>Available</span></div>
+          </div>
+        </div>
+
+        <div class="card wide">
+          <h2>👥 Currently Using Computers</h2>
+          <div id="activeList" class="active-list"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= ADMIN VIEW ================= -->
+    <section id="adminView" class="view">
+
+      <div id="loginBox" class="card login">
+        <h2>🔐 Admin Login</h2>
+        <p class="hint">For teachers and laboratory staff only.</p>
+        <form id="loginForm" autocomplete="off">
+          <label>Username
+            <input type="text" id="adminUser" placeholder="admin" required>
+          </label>
+          <label>Password
+            <input type="password" id="adminPass" placeholder="••••••••" required>
+          </label>
+          <button type="submit" class="btn primary full">Login</button>
+        </form>
+        <p class="demo-note">Demo account: <code>admin</code> / <code>admin123</code></p>
+      </div>
+
+      <div id="dashboard" class="hidden">
+        <div class="dash-head">
+          <h2>📊 Admin Dashboard</h2>
+          <div class="actions">
+            <button class="btn ghost" id="sampleBtn">Load Sample Data</button>
+            <button class="btn ghost" id="exportBtn">Export CSV</button>
+            <button class="btn ghost" id="printBtn">Print</button>
+            <button class="btn danger" id="clearBtn">Clear All</button>
+            <button class="btn primary" id="logoutBtn">Logout</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><span>Users Today</span><strong id="aToday">0</strong></div>
+          <div class="stat"><span>Currently Active</span><strong id="aActive">0</strong></div>
+          <div class="stat"><span>Available PCs</span><strong id="aFree">0</strong></div>
+          <div class="stat"><span>Avg. Time Used</span><strong id="aAvg">0m</strong></div>
+        </div>
+
+        <div class="card">
+          <h3>Laboratory Map</h3>
+          <div class="legend"><span class="dot free"></span> Available <span class="dot used"></span> In use</div>
+          <div id="labMap" class="lab-map"></div>
+        </div>
+
+        <div class="card">
+          <h3>Usage Records</h3>
+          <div class="filters">
+            <input type="text" id="search" placeholder="Search name, ID, section, PC…">
+            <input type="date" id="dateFilter">
+            <select id="statusFilter">
+              <option value="all">All status</option>
+              <option value="active">Active</option>
+              <option value="done">Completed</option>
+            </select>
+            <button class="btn ghost" id="resetFilters">Reset</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Student</th><th>Student ID</th><th>Section</th>
+                  <th>PC</th><th>Purpose</th><th>Date</th><th>Time In</th>
+                  <th>Time Out</th><th>Duration</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="recordsBody"></tbody>
+            </table>
+          </div>
+          <p id="emptyMsg" class="empty hidden">No records found.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Occidental Mindoro State College • BSIT 1-E • Laboratory Activity 1</footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+/* =========================================================
+   LabTrack – Computer Laboratory User Monitoring System
+   Data is stored in the browser (localStorage).
+   ========================================================= */
+
+const LAB_SIZE = 30;                      // number of computers in the laboratory
+const STORAGE_KEY = "labtrack_sessions";
+const AUTH_KEY = "labtrack_admin";
+const ADMIN = { user: "admin", pass: "admin123" }; // demo credentials
+
+let sessions = loadSessions();
+
+/* ---------- Storage ---------- */
+function loadSessions() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+function saveSessions() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+/* ---------- Helpers ---------- */
+const $ = (id) => document.getElementById(id);
+
+function esc(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+function pcLabel(n) { return "PC-" + String(n).padStart(2, "0"); }
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" });
+}
+function dateKey(iso) {
+  const d = new Date(iso);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function fmtDuration(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return (h ? h + "h " : "") + String(m).padStart(h ? 2 : 1, "0") + "m " + String(s).padStart(2, "0") + "s";
+}
+function toast(msg, type = "") {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "toast show " + type;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => (t.className = "toast"), 2800);
+}
+const activeSessions = () => sessions.filter((s) => !s.timeOut);
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll(".tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+    btn.classList.add("active");
+    $(btn.dataset.view).classList.add("active");
+    renderAll();
+  });
+});
+
+/* ---------- Clock + live durations ---------- */
+function tick() {
+  $("clock").textContent = new Date().toLocaleString([], {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit"
+  });
+  document.querySelectorAll("[data-start]").forEach((el) => {
+    el.textContent = fmtDuration(Date.now() - new Date(el.dataset.start).getTime());
+  });
+}
+setInterval(tick, 1000);
+
+/* ---------- Student: Time In ---------- */
+function renderPcSelect() {
+  const sel = $("pcSelect");
+  const current = sel.value;
+  const used = activeSessions().map((s) => s.pc);
+  let html = '<option value="" disabled selected>Select PC</option>';
+  for (let i = 1; i <= LAB_SIZE; i++) {
+    const inUse = used.includes(i);
+    html += `<option value="${i}" ${inUse ? "disabled" : ""}>${pcLabel(i)}${inUse ? " (in use)" : ""}</option>`;
+  }
+  sel.innerHTML = html;
+  if (current && !used.includes(Number(current))) sel.value = current;
+}
+
+$("timeInForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = $("name").value.trim();
+  const studentId = $("studentId").value.trim();
+  const section = $("section").value.trim();
+  const pc = Number($("pcSelect").value);
+  const purpose = $("purpose").value;
+
+  if (!name || !studentId || !section || !pc) {
+    return toast("Please complete all fields.", "error");
+  }
+  const active = activeSessions();
+  if (active.some((s) => s.studentId.toLowerCase() === studentId.toLowerCase())) {
+    return toast("This student is already timed in. Please time out first.", "error");
+  }
+  if (active.some((s) => s.pc === pc)) {
+    return toast(pcLabel(pc) + " is already in use. Choose another computer.", "error");
+  }
+
+  sessions.push({
+    id: Date.now() + Math.random().toString(36).slice(2, 6),
+    name, studentId, section, pc, purpose,
+    timeIn: new Date().toISOString(),
+    timeOut: null
+  });
+  saveSessions();
+  $("timeInForm").reset();
+  toast(`Timed in: ${name} on ${pcLabel(pc)}`, "success");
+  renderAll();
+});
+
+/* ---------- Student: Time Out ---------- */
+function timeOutByStudentId(studentId) {
+  const s = activeSessions().find((x) => x.studentId.toLowerCase() === studentId.trim().toLowerCase());
+  if (!s) return toast("No active session found for that Student ID.", "error");
+  s.timeOut = new Date().toISOString();
+  saveSessions();
+  toast(`Timed out: ${s.name} (${pcLabel(s.pc)})`, "success");
+  renderAll();
+  return true;
+}
+
+$("timeOutForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (timeOutByStudentId($("outStudentId").value)) $("timeOutForm").reset();
+});
+
+/* ---------- Student: active list ---------- */
+function renderActive() {
+  const list = activeSessions().sort((a, b) => a.pc - b.pc);
+  $("sActive").textContent = list.length;
+  $("sFree").textContent = LAB_SIZE - list.length;
+
+  if (!list.length) {
+    $("activeList").innerHTML = '<p class="empty" style="grid-column:1/-1">No one is using a computer right now.</p>';
+    return;
+  }
+  $("activeList").innerHTML = list.map((s) => `
+    <div class="user-card">
+      <div class="top"><span class="pc-badge">${pcLabel(s.pc)}</span><small>${esc(s.purpose)}</small></div>
+      <h4>${esc(s.name)}</h4>
+      <small>${esc(s.studentId)} • ${esc(s.section)}</small>
+      <small>Since ${fmtTime(s.timeIn)}</small>
+      <div class="elapsed" data-start="${s.timeIn}">${fmtDuration(Date.now() - new Date(s.timeIn))}</div>
+      <button class="btn danger small" data-out="${esc(s.studentId)}">Time Out</button>
+    </div>`).join("");
+}
+
+$("activeList").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-out]");
+  if (!btn) return;
+  $("outStudentId").value = btn.dataset.out;
+  $("outStudentId").focus();
+  toast("Confirm your Student ID, then press Time Out.");
+});
+
+/* ---------- Admin: login ---------- */
+function isAdmin() { return sessionStorage.getItem(AUTH_KEY) === "1"; }
+
+function renderAuth() {
+  $("loginBox").classList.toggle("hidden", isAdmin());
+  $("dashboard").classList.toggle("hidden", !isAdmin());
+}
+
+$("loginForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if ($("adminUser").value.trim() === ADMIN.user && $("adminPass").value === ADMIN.pass) {
+    sessionStorage.setItem(AUTH_KEY, "1");
+    $("loginForm").reset();
+    toast("Welcome, Admin!", "success");
+    renderAll();
+  } else {
+    toast("Invalid username or password.", "error");
+  }
+});
+
+$("logoutBtn").addEventListener("click", () => {
+  sessionStorage.removeItem(AUTH_KEY);
+  toast("Logged out.");
+  renderAll();
+});
+
+/* ---------- Admin: stats + map ---------- */
+function renderStats() {
+  const todayKey = dateKey(new Date().toISOString());
+  const today = sessions.filter((s) => dateKey(s.timeIn) === todayKey);
+  const done = today.filter((s) => s.timeOut);
+  const avg = done.length
+    ? done.reduce((sum, s) => sum + (new Date(s.timeOut) - new Date(s.timeIn)), 0) / done.length
+    : 0;
+  const active = activeSessions().length;
+
+  $("aToday").textContent = today.length;
+  $("aActive").textContent = active;
+  $("aFree").textContent = LAB_SIZE - active;
+  $("aAvg").textContent = done.length ? Math.max(1, Math.round(avg / 60000)) + "m" : "0m";
+}
+
+function renderMap() {
+  const map = {};
+  activeSessions().forEach((s) => (map[s.pc] = s));
+  let html = "";
+  for (let i = 1; i <= LAB_SIZE; i++) {
+    const s = map[i];
+    html += s
+      ? `<div class="pc used" title="${esc(s.name)}"><b>${pcLabel(i)}</b><span>${esc(s.name.split(",")[0])}</span></div>`
+      : `<div class="pc"><b>${pcLabel(i)}</b><span>Available</span></div>`;
+  }
+  $("labMap").innerHTML = html;
+}
+
+/* ---------- Admin: records ---------- */
+function filteredRecords() {
+  const q = $("search").value.trim().toLowerCase();
+  const date = $("dateFilter").value;
+  const status = $("statusFilter").value;
+
+  return sessions
+    .filter((s) => {
+      const text = [s.name, s.studentId, s.section, pcLabel(s.pc), s.purpose].join(" ").toLowerCase();
+      if (q && !text.includes(q)) return false;
+      if (date && dateKey(s.timeIn) !== date) return false;
+      if (status === "active" && s.timeOut) return false;
+      if (status === "done" && !s.timeOut) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(b.timeIn) - new Date(a.timeIn));
+}
+
+function renderRecords() {
+  const rows = filteredRecords();
+  $("emptyMsg").classList.toggle("hidden", rows.length > 0);
+  $("recordsBody").innerHTML = rows.map((s, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${esc(s.name)}</td>
+      <td>${esc(s.studentId)}</td>
+      <td>${esc(s.section)}</td>
+      <td>${pcLabel(s.pc)}</td>
+      <td>${esc(s.purpose)}</td>
+      <td>${fmtDate(s.timeIn)}</td>
+      <td>${fmtTime(s.timeIn)}</td>
+      <td>${s.timeOut ? fmtTime(s.timeOut) : "—"}</td>
+      <td>${s.timeOut
+        ? fmtDuration(new Date(s.timeOut) - new Date(s.timeIn))
+        : `<span data-start="${s.timeIn}">${fmtDuration(Date.now() - new Date(s.timeIn))}</span>`}</td>
+      <td><span class="badge ${s.timeOut ? "done" : "active"}">${s.timeOut ? "Completed" : "Active"}</span></td>
+      <td>
+        ${s.timeOut ? "" : `<button class="btn ghost small" data-force="${s.id}">Time Out</button>`}
+        <button class="btn danger small" data-del="${s.id}">Delete</button>
+      </td>
+    </tr>`).join("");
+}
+
+$("recordsBody").addEventListener("click", (e) => {
+  const force = e.target.closest("[data-force]");
+  const del = e.target.closest("[data-del]");
+  if (force) {
+    const s = sessions.find((x) => x.id === force.dataset.force);
+    if (s) { s.timeOut = new Date().toISOString(); saveSessions(); toast("Session ended.", "success"); renderAll(); }
+  }
+  if (del && confirm("Delete this record permanently?")) {
+    sessions = sessions.filter((x) => x.id !== del.dataset.del);
+    saveSessions();
+    toast("Record deleted.");
+    renderAll();
+  }
+});
+
+["search", "dateFilter", "statusFilter"].forEach((id) =>
+  $(id).addEventListener("input", renderRecords)
+);
+$("resetFilters").addEventListener("click", () => {
+  $("search").value = ""; $("dateFilter").value = ""; $("statusFilter").value = "all";
+  renderRecords();
+});
+
+/* ---------- Admin: export / print / clear / sample ---------- */
+$("exportBtn").addEventListener("click", () => {
+  const rows = filteredRecords();
+  if (!rows.length) return toast("Nothing to export.", "error");
+  const header = ["Name", "Student ID", "Section", "Computer", "Purpose", "Date", "Time In", "Time Out", "Duration", "Status"];
+  const csv = [header].concat(rows.map((s) => [
+    s.name, s.studentId, s.section, pcLabel(s.pc), s.purpose, fmtDate(s.timeIn), fmtTime(s.timeIn),
+    s.timeOut ? fmtTime(s.timeOut) : "",
+    s.timeOut ? fmtDuration(new Date(s.timeOut) - new Date(s.timeIn)) : "",
+    s.timeOut ? "Completed" : "Active"
+  ])).map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(",")).join("\r\n");
+
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "lab-usage-records.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("CSV exported.", "success");
+});
+
+$("printBtn").addEventListener("click", () => window.print());
+
+$("clearBtn").addEventListener("click", () => {
+  if (!sessions.length) return toast("There are no records to clear.");
+  if (confirm("Delete ALL records? This cannot be undone.")) {
+    sessions = [];
+    saveSessions();
+    toast("All records cleared.");
+    renderAll();
+  }
+});
+
+$("sampleBtn").addEventListener("click", () => {
+  const people = [
+    ["Flores, Andrea Mariz B.", "2026-00101", "BSIT 1-E"],
+    ["Zapata, Patrick T.", "2026-00102", "BSIT 1-E"],
+    ["Masangkay, Asrael James D.", "2026-00103", "BSIT 1-E"],
+    ["Santos, Maria L.", "2026-00104", "BSIT 1-A"],
+    ["Reyes, John Carlo M.", "2026-00105", "BSIT 1-B"]
+  ];
+  const purposes = ["Class Activity", "Laboratory Exercise", "Programming / Coding", "Research"];
+  const now = Date.now();
+  people.forEach((p, i) => {
+    if (sessions.some((s) => s.studentId === p[1] && !s.timeOut)) return;
+    const start = now - (i + 1) * 40 * 60000;
+    const isActive = i >= 3;
+    sessions.push({
+      id: "sample" + i + now,
+      name: p[0], studentId: p[1], section: p[2],
+      pc: i + 1 + (isActive ? 10 : 0),
+      purpose: purposes[i % purposes.length],
+      timeIn: new Date(start).toISOString(),
+      timeOut: isActive ? null : new Date(start + (25 + i * 7) * 60000).toISOString()
+    });
+  });
+  saveSessions();
+  toast("Sample data loaded.", "success");
+  renderAll();
+});
+
+/* ---------- Render everything ---------- */
+function renderAll() {
+  renderPcSelect();
+  renderActive();
+  renderAuth();
+  if (isAdmin()) {
+    renderStats();
+    renderMap();
+    renderRecords();
+  }
+  tick();
+}
+
+// Keep multiple tabs in sync
+window.addEventListener("storage", (e) => {
+  if (e.key === STORAGE_KEY) { sessions = loadSessions(); renderAll(); }
+});
+
+renderAll();
+
+</script>
+</body>
+</html>
